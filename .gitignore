@@ -11,6 +11,5 @@ htmlcov
 /venv
 /venv39/
 /static/
-/.streamlit/
 /.env
 *.png
