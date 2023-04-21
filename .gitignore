@@ -13,3 +13,4 @@ htmlcov
 /static/
 /.streamlit/
 /.env
+*.png

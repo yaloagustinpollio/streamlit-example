@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 import streamlit as st
 from langchain.llms import OpenAI
@@ -13,6 +14,9 @@ basepath = Path()
 envars = basepath.cwd() / ".env"
 load_dotenv(envars)
 
+container = st.container()
+container.title('Analytics GPT')
+
 def ask_agent(question):
     # df = get_order_items(bot_id, storefront_name=storefront_name, start_date="2023-01-01", end_date="2023-03-07")
     df = get_order_items_from_csv("mockup_data_region.csv")
@@ -21,9 +25,12 @@ def ask_agent(question):
     llm = OpenAI(temperature=0)
     agent = create_pandas_dataframe_agent_with_tools(tools, llm, df, verbose=True, return_intermediate_steps=True)
     response = agent({"input": question})
+    
+    container.write(userPrompt)
+    container.write(response.get("output"))
+    shutil.copyfile('top_10_products_by_region.png', 'static/plot.png')
+    container.markdown("[![Click me](app/static/plot.png)](https://yalo.com)")
 
-container = st.container()
-container.title('Analytics GPT')
 
 with st.sidebar:
     st.header('Query sidebar!')
@@ -33,5 +40,3 @@ with st.sidebar:
 
     if result:
         ask_agent(userPrompt)
-        container.write(userPrompt)
-        container.markdown("[![Click me](app/static/cat.png)](https://streamlit.io)")
