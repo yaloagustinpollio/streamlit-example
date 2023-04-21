@@ -1,38 +1,37 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
+from pathlib import Path
+
 import streamlit as st
+from langchain.llms import OpenAI
+import pandas as pd
+from dotenv import load_dotenv
 
-"""
-# Welcome to Streamlit!
+from src.pandas_dataframe_agent import create_pandas_dataframe_agent_with_tools
+from src.orders import get_order_items_from_csv
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
+# Get the base directory
+basepath = Path()
+envars = basepath.cwd() / ".env"
+load_dotenv(envars)
 
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+def ask_agent(question):
+    # df = get_order_items(bot_id, storefront_name=storefront_name, start_date="2023-01-01", end_date="2023-03-07")
+    df = get_order_items_from_csv("mockup_data_region.csv")
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+    tools = []
+    llm = OpenAI(temperature=0)
+    agent = create_pandas_dataframe_agent_with_tools(tools, llm, df, verbose=True, return_intermediate_steps=True)
+    response = agent({"input": question})
 
+container = st.container()
+container.title('Analytics GPT')
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
+with st.sidebar:
+    st.header('Query sidebar!')
 
-    Point = namedtuple('Point', 'x y')
-    data = []
+    userPrompt = st.text_area(label='What do you want to know?')
+    result = st.button(label='Click for Magic')
 
-    points_per_turn = total_points / num_turns
-
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
-
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+    if result:
+        ask_agent(userPrompt)
+        container.write(userPrompt)
+        container.markdown("[![Click me](app/static/cat.png)](https://streamlit.io)")
